@@ -25,6 +25,16 @@ const fetchMyIP = (callback) => {
   });
 };
 
+/**
+ * Makes a single API request to retrieve the lat/lng for a given IPv4 address.
+ * Input:
+ *   - The ip (ipv4) address (string)
+ *   - A callback (to pass back an error or the lat/lng object)
+ * Returns (via Callback):
+ *   - An error, if any (nullable)
+ *   - The lat and lng as an object (null if error). Example:
+ *     { latitude: '49.27670', longitude: '-123.13000' }
+ */
 const fetchCoordsByIP = (ip, callback) => {
   request(`http://ipwho.is/${ip}`, (error, response, body) => {
     if (error) {
@@ -73,6 +83,28 @@ const fetchISSFlyOverTimes = (coords, callback) => {
   );
 };
 
-//https://iss-flyover.herokuapp.com/json/?lat=YOUR_LAT_INPUT_HERE&lon=YOUR_LON_INPUT_HERE
+/**
+ * Orchestrates multiple API requests in order to determine the next 5 upcoming ISS fly overs for the user's current location.
+ * Input:
+ *   - A callback with an error or results.
+ * Returns (via Callback):
+ *   - An error, if any (nullable)
+ *   - The fly-over times as an array (null if error):
+ *     [ { risetime: <number>, duration: <number> }, ... ]
+ */
+const nextISSTimesForMyLocation = (callback) => {
+  fetchMyIP((error, ip) => {
+    if (error) return callback(error, null);
+    //console.log(ip);
+    fetchCoordsByIP(ip, (error, coords) => {
+      if (error) return callback(error, null);
+      //console.log(coords);
+      fetchISSFlyOverTimes(coords, (error, passess) => {
+        if (error) return callback(error, null);
+        callback(null, passess);
+      });
+    });
+  });
+};
 
-module.exports = { fetchMyIP, fetchCoordsByIP, fetchISSFlyOverTimes };
+module.exports = { nextISSTimesForMyLocation };
